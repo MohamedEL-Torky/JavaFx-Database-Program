@@ -1,0 +1,387 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package silkroadgui;
+
+import javafx.application.Application;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.*;
+import javafx.stage.Stage;
+import java.sql.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.geometry.HPos;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Group;
+import javafx.scene.control.TabPane.TabClosingPolicy;
+import javax.swing.JOptionPane;
+/**
+ *
+ * @author EL-Torky
+ */
+public class SilkroadGUI extends Application {
+    private Statement stmt;
+    
+    Stage CreateAccountStage = new Stage();
+    Stage LoginStage = new Stage();
+    Stage ProfileStage = new Stage();
+    Stage CreateCharacter = new Stage();
+    Stage OwnedCharStage = new Stage();
+    Stage DeleteStage = new Stage();
+    
+    TextField UserName = new TextField();
+    PasswordField Password = new PasswordField();
+    Label validAccount = new Label();
+    String userID;
+    
+    @Override
+    public void start(Stage primaryStage) {
+        initializeDB();
+        
+        BorderPane pane = new BorderPane();
+        pane.setCenter(new StackPane(new Label("Welcome to Silkroad Portal")));
+        
+        Button btCreateAccount = new Button("CreateAccount");
+        Button btLogin = new Button("Login");
+        Button btCredit = new Button("Credit");
+        btCredit.setOnAction( e-> {
+        JOptionPane.showMessageDialog(null, "Made by Mohamed ELTorky.\n"
+                + "Reg No: 15101763\n"
+                + "Interface for the Database Project,"
+                + "Used one complex query that returns the count of\n"
+                + "Characters the user own, which is:\n"
+                + "SELECT Count(*) FROM UserCharacter where AccountID = 'Loged user ID';\n\n"
+                + "Also It has three input forms which is: Insert, Delete And Select.");
+        
+        
+        });
+        
+        
+        btCreateAccount.setOnAction( e -> createAccount() );
+        btLogin.setOnAction( e -> UserLogin() );
+        
+        HBox hBox = new HBox(btCreateAccount, btCredit,btLogin);
+        hBox.setSpacing(210);
+        hBox.setAlignment(Pos.CENTER);
+        pane.setBottom(hBox);
+        
+        Scene scene = new Scene(pane, 600, 600);
+        primaryStage.setResizable(false);
+        primaryStage.setTitle("Silkroad Portal"); // Set the stage title
+        primaryStage.setScene(scene); // Place the scene in the stage
+        primaryStage.show(); // Display the stage   
+    }
+    public void createAccount(){
+        GridPane pane = new GridPane();
+        pane.setAlignment(Pos.CENTER);
+        pane.setPadding(new Insets(11.5, 12.5, 13.5, 14.5));
+        pane.setHgap(5.5);
+        pane.setVgap(5.5);
+        
+        TextField txtEmail = new TextField();
+        TextField txtUserName = new TextField();
+        PasswordField txtUserPassword = new PasswordField();
+        PasswordField txtReUserPassword = new PasswordField();
+        
+        
+        pane.add(new Label("Email"), 0, 0);
+        pane.add(new Label("UserName"), 0, 1);
+        pane.add(new Label("Password"), 0, 2); 
+        pane.add(new Label("RePassword"), 0, 3);
+        
+        pane.add(txtEmail, 1, 0);
+        pane.add(txtUserName, 1, 1);
+        pane.add(txtUserPassword, 1, 2); 
+        pane.add(txtReUserPassword, 1, 3);
+        
+        Button btCreate = new Button("Create");
+        
+        pane.add(btCreate, 1, 4);
+        GridPane.setHalignment(btCreate, HPos.LEFT);
+        btCreate.setOnAction( e-> {
+        boolean cheack = true;
+        if( !txtUserPassword.getText().equals(txtReUserPassword.getText()) ){
+            cheack = false;
+           JOptionPane.showMessageDialog(null, "Password does not match !");
+        }
+        if( txtUserName.getText().equals("") || txtUserName.getText().equals(" ") || 
+            txtUserPassword.getText().equals("") || txtReUserPassword.getText().equals(" ")){
+            cheack = false;
+            JOptionPane.showMessageDialog(null, "You can't leave these fields "
+                    + "empty");
+        }
+        if(cheack){
+            
+            try {
+                String InsertAccount = "Insert into UseAccount "
+                        + "(UserName,UserPassword,Email) values('"+txtUserName.getText()+"'"
+                        + ",'"+txtUserPassword.getText()+"','"+txtEmail.getText()+"');";
+                stmt.executeUpdate(InsertAccount);
+                JOptionPane.showMessageDialog(null, "Account Created"
+                    + " Successfully!!");
+            } 
+            catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, "Account Already Exists!");
+            }
+        }
+        
+        
+        });
+        Scene scene = new Scene(pane);
+        CreateAccountStage.setTitle("Create Accounte"); // Set the stage title
+        CreateAccountStage.setScene(scene); // Place the scene in the stage
+        CreateAccountStage.show(); // Display the stage
+    }
+    
+    public void UserLogin(){
+        
+        GridPane pane = new GridPane();
+        pane.setAlignment(Pos.CENTER);
+        pane.setPadding(new Insets(11.5, 12.5, 13.5, 14.5));
+        pane.setHgap(5.5);
+        pane.setVgap(5.5);
+
+        // Place nodes in the pane
+        pane.add(new Label("UserName"), 0, 0);
+        pane.add(UserName, 1, 0);
+        pane.add(new Label("Password"), 0, 1); 
+        pane.add(Password, 1, 1);
+        Button btLogin = new Button("Login");
+        pane.add(btLogin, 1, 2);
+        GridPane.setHalignment(btLogin, HPos.RIGHT);
+        pane.add(validAccount, 1, 3);
+        GridPane.setHalignment(validAccount, HPos.RIGHT);
+        btLogin.setOnAction(e -> CheckAccount());
+        validAccount.setText("");
+        // Create a scene and place it in the stage
+        Scene scene = new Scene(pane);
+        LoginStage.setTitle("User Login"); // Set the stage title
+        LoginStage.setScene(scene); // Place the scene in the stage
+        LoginStage.show(); // Display the stage
+
+    }
+    
+    public void CheckAccount(){
+        
+        String userName = UserName.getText();
+        String userPassword = Password.getText();
+        try {
+          String queryString = "SELECT * FROM UseAccount WHERE "
+                  + "UserName = '"+userName+"' AND "
+                  + "UserPassword = '"+userPassword+"'";
+
+          ResultSet rset = stmt.executeQuery(queryString);
+
+          if (rset.next()) {
+            JOptionPane.showMessageDialog(null, "Welcome "+rset.getString(2)+" !");
+            userID = rset.getString(1);
+            LoginStage.close();
+            profile();
+          }
+          else {
+            validAccount.setText("Invalid UserName/Password");
+          }
+        }
+        catch (SQLException ex) {
+          ex.printStackTrace();
+        }
+    }
+    
+    public void profile(){
+        GridPane pane = new GridPane();
+        pane.setAlignment(Pos.CENTER);
+        pane.setPadding(new Insets(11.5, 12.5, 13.5, 14.5));
+        pane.setHgap(5.5);
+        pane.setVgap(5.5);
+        Button btCreateCharacter = new Button("Create new Character");
+        Button btShowOwnedchracters = new Button("Show owned Character");
+        pane.add(btCreateCharacter, 0, 0);
+        pane.add(btShowOwnedchracters, 1, 0);
+        
+        btCreateCharacter.setOnAction( e-> {
+            
+        GridPane paneCharacter = new GridPane();
+        paneCharacter.setAlignment(Pos.CENTER);
+        paneCharacter.setPadding(new Insets(11.5, 12.5, 13.5, 14.5));
+        paneCharacter.setHgap(5.5);
+        paneCharacter.setVgap(5.5);
+        
+        TextField txtCharName = new TextField();
+        TextField txtCharDescreption = new TextField();
+        
+        
+        paneCharacter.add(new Label("Enter Character Name:"), 0, 0);
+        paneCharacter.add(new Label("Enter Character Name Descreption"), 0, 1);
+        
+        paneCharacter.add(txtCharName, 1, 0);
+        paneCharacter.add(txtCharDescreption, 1, 1);
+        Button btCreate = new Button("Create");
+        
+        paneCharacter.add(btCreate, 1, 2);
+        GridPane.setHalignment(btCreate, HPos.LEFT);
+        
+        btCreate.setOnAction(x -> {
+        
+        boolean cheack = true;
+        if( txtCharName.getText().equals("") || txtCharName.getText().equals(" ") || 
+            txtCharDescreption.getText().equals("") || txtCharDescreption.getText().equals(" ")){
+            cheack = false;
+            JOptionPane.showMessageDialog(null, "You can't leave these fields "
+                    + "empty");
+        }
+        if(cheack){
+            
+            try {
+                String InsertAccount = "Insert into UserCharacter "
+                        + "(CharacterName,Descreption,AccountID) values('"+txtCharName.getText()+"'"
+                        + ",'"+txtCharDescreption.getText()+"','"+userID+"');";
+                stmt.executeUpdate(InsertAccount);
+                JOptionPane.showMessageDialog(null, "Chracter Created"
+                    + " Successfully!!");
+            } 
+            catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, "Account Already Exists!");
+            }
+        }
+        
+            
+            
+        // 2nd button end
+        });
+        
+        Scene scene = new Scene(paneCharacter);
+        CreateCharacter.setTitle("Profile Page"); // Set the stage title
+        CreateCharacter.setScene(scene); // Place the scene in the stage
+        CreateCharacter.show(); // Display the stage
+        
+        
+        // first button end
+        });
+        
+        
+        btShowOwnedchracters.setOnAction(o -> {
+        
+        GridPane ShowCharcters = new GridPane();
+        ShowCharcters.setAlignment(Pos.CENTER);
+        ShowCharcters.setPadding(new Insets(11.5, 12.5, 13.5, 14.5));
+        ShowCharcters.setHgap(5.5);
+        ShowCharcters.setVgap(5.5);
+        ShowCharcters.add(new Label("Chracter Name"), 0, 0);
+        
+        Button btDelete = new Button("Delete Character");
+        btDelete.setOnAction( u -> {
+        
+        GridPane deletePane = new GridPane();
+        deletePane.setAlignment(Pos.CENTER);
+        deletePane.setPadding(new Insets(11.5, 12.5, 13.5, 14.5));
+        deletePane.setHgap(5.5);
+        deletePane.setVgap(5.5);
+        deletePane.add(new Label("Chracter Name"), 0, 0);
+        TextField txtCharName = new TextField();
+        deletePane.add(txtCharName, 0, 1);
+        Button btDeleteFinal = new Button("Delete");
+        deletePane.setHalignment(btDeleteFinal, HPos.RIGHT);
+        deletePane.add(btDeleteFinal, 1, 1);
+        btDeleteFinal.setOnAction( q -> {
+            try {
+                String deleteString = "DELETE "
+                        + "FROM UserCharacter "
+                        + "Where "
+                        + "AccountID = '"+userID+"' AND "
+                        + "CharacterName = '"+txtCharName.getText()+"';";
+                stmt.executeUpdate(deleteString);
+                JOptionPane.showMessageDialog(null, "Account Deleted Successfully!!");
+            }
+            catch (SQLException ex){
+                Logger.getLogger(SilkroadGUI.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        
+        });
+        
+        Scene scene = new Scene(deletePane);
+        DeleteStage.setTitle("Owned Characters Page"); // Set the stage title
+        DeleteStage.setScene(scene); // Place the scene in the stage
+        DeleteStage.show(); // Display the stage
+        
+        });
+        
+        Label[] lbCharName = new Label[100];
+        Label CountOfChars = new Label();
+        Label NumberOfChars = new Label("Number of OwnerCharcters:");
+        int b = 0;
+        try {
+        String queryString1 = "SELECT * "
+                + "FROM UserCharacter "
+                + "Where "
+                + "AccountID = '"+userID+"';";
+            ResultSet rset= stmt.executeQuery(queryString1);
+            while(rset.next()){
+                lbCharName[b] = new Label(rset.getString(2));
+                ShowCharcters.add(lbCharName[b], 0, b+1);
+                b++;
+            }
+            ShowCharcters.add(NumberOfChars, 0, b+1);
+            ShowCharcters.add(CountOfChars, 1, b+1);
+            ShowCharcters.add(btDelete, 1, b+2);
+            ShowCharcters.setHalignment(btDelete, HPos.RIGHT);
+            String countQuery = "SELECT Count(*) "
+                    + "FROM UserCharacter where AccountID = '"+userID+"';";
+            ResultSet rset2= stmt.executeQuery(countQuery);
+            if(rset2.next()){
+                CountOfChars.setText(rset2.getString(1));
+            }
+            
+        }
+        catch (SQLException ex) {
+            Logger.getLogger(SilkroadGUI.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        Scene scene = new Scene(ShowCharcters);
+        OwnedCharStage.setTitle("Owned Characters Page"); // Set the stage title
+        OwnedCharStage.setScene(scene); // Place the scene in the stage
+        OwnedCharStage.show(); // Display the stage
+            
+        });
+        
+
+        Scene scene = new Scene(pane);
+        ProfileStage.setTitle("Profile Page"); // Set the stage title
+        ProfileStage.setScene(scene); // Place the scene in the stage
+        ProfileStage.show(); // Display the stage
+    }
+    
+    private void initializeDB() {
+    try {
+      // Load the JDBC driver
+      Class.forName("com.mysql.jdbc.Driver");
+      System.out.println("Driver loaded");
+      
+      // Establish a connection
+      Connection connection = DriverManager.getConnection
+      ("jdbc:mysql://localhost/Silkroad", "scott", "tiger");
+      System.out.println("Database connected");
+      
+      // Create a statement
+      stmt = connection.createStatement();
+    }
+    catch (Exception ex) {
+      JOptionPane.showMessageDialog(null, "Connection Error: Unkown Database\n"
+              + "Program won't work, please close the program and re-enter"
+              + "The database name inside connection");
+    }
+  }
+    /**
+     * @param args the command line arguments
+     */
+    public static void main(String[] args) {
+        launch(args);
+    }
+    
+}
