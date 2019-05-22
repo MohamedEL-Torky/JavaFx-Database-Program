@@ -8,5 +8,3 @@ connection for the user name and password to connect to your DBMS.
 Just don't forget to edit the Jar files inside the project libraries to suite it with the drivers path inside your computer.
 
 2- Option two : Just copy and paste the raw code inside my repository and edit it as you wish.
-
-For any question, notice or even for criticising my project. please contact with me through mohamedtarekeltorky@gmail.com
